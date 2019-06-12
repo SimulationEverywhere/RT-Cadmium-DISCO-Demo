@@ -56,6 +56,7 @@ using TIME = NDTime;
 
 int main(int argc, char ** argv) {
 
+
     // LCD_DISCO_F429ZI lcd;
     // TS_DISCO_F429ZI ts;
     //
@@ -110,6 +111,7 @@ int main(int argc, char ** argv) {
     //         lcd.DisplayStringAt(0, LINE(0), (uint8_t *)&text, LEFT_MODE);
     //     }
     //
+    //     temp_humid_sensor.update_from_sensor();
     //     sprintf((char*)text, "Temp = %.2f", temp_humid_sensor.read_temperature());
     //     lcd.DisplayStringAt(0, LINE(3), (uint8_t *)&text, LEFT_MODE);
     //     sprintf((char*)text, "Humidity = %.2f", temp_humid_sensor.read_humidity());
@@ -165,7 +167,7 @@ int main(int argc, char ** argv) {
   /***************** blinky *******************/
   /********************************************/
 
-  AtomicModelPtr digital_temp_humidity1 = cadmium::dynamic::translate::make_dynamic_atomic_model<DigitalTemperatureHumidity, TIME>("digital_temp_humidity1", PB_9, PB_8);
+  AtomicModelPtr digital_temp_humidity1 = cadmium::dynamic::translate::make_dynamic_atomic_model<DigitalTemperatureHumidity, TIME>("digital_temp_humidity1", PC_9, PA_8);
 
   /********************************************/
   /********** interruptInput1 *******************/
@@ -176,7 +178,6 @@ int main(int argc, char ** argv) {
   /********* DigitalOutput1 *******************/
   /********************************************/
   AtomicModelPtr lcd1 = cadmium::dynamic::translate::make_dynamic_atomic_model<LCD, TIME>("lcd1");
-
 
   /************************/
   /*******TOP MODEL********/
@@ -189,7 +190,7 @@ int main(int argc, char ** argv) {
   cadmium::dynamic::modeling::ICs ics_TOP = {
     cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::temperature_out, arbiter_defs::temperature_in>("digital_temp_humidity1","arbiter1"),
     cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::humidity_out, arbiter_defs::humidity_in>("digital_temp_humidity1","arbiter1"),
-    cadmium::dynamic::translate::make_IC<arbiter_defs::string_out, LCD_defs::in>("arbiter1","lcd1"),
+    cadmium::dynamic::translate::make_IC<arbiter_defs::lcd_update_out, LCD_defs::in>("arbiter1","lcd1"),
     //cadmium::dynamic::translate::make_IC<interruptInput_defs::out, blinky_defs::in>("interruptInput1", "blinky1")
   };
   CoupledModelPtr TOP = std::make_shared<cadmium::dynamic::modeling::coupled<TIME>>(
@@ -203,7 +204,7 @@ int main(int argc, char ** argv) {
   );
 
   ///****************////
-  cadmium::dynamic::engine::runner<NDTime, log_all> r(TOP, {0});
+  cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
   r.run_until(NDTime("00:10:00:000"));
   #ifndef ECADMIUM
     return 0;

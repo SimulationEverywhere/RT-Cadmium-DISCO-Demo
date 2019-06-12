@@ -29,7 +29,7 @@ using namespace std;
 
 //Port definition
 struct arbiter_defs {
-    struct string_out : public out_port<std::string> { };
+    struct lcd_update_out : public out_port<lcd_update> { };
     struct temperature_in : public in_port<float> { };
     struct humidity_in : public in_port<float> { };
 };
@@ -48,13 +48,13 @@ public:
     // state definition
     struct state_type{
         bool propagating;
-        std::string output;
+        lcd_update output;
     };
     state_type state;
     // ports definition
 
     using input_ports=std::tuple<typename defs::temperature_in, typename defs::humidity_in>;
-    using output_ports=std::tuple<typename defs::string_out>;
+    using output_ports=std::tuple<typename defs::lcd_update_out>;
 
     // internal transition
     void internal_transition() {
@@ -64,14 +64,13 @@ public:
 
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
-        std::string s("");
         for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-            s += "T=" + to_string(x);
+            sprintf(state.output.characters[2], "Temperature = %.2f", x);
         }
-        for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-            s += "H=" + to_string(x);
+        for(const auto &x : get_messages<typename defs::humidity_in>(mbs)){
+            sprintf(state.output.characters[3], "Humidity = %.2f", x);
         }
-        state.output = s;
+
         state.propagating = true;
     }
     // confluence transition
@@ -83,7 +82,7 @@ public:
     // output function
     typename make_message_bags<output_ports>::type output() const {
         typename make_message_bags<output_ports>::type bags;
-        get_messages<typename defs::string_out>(bags).push_back(state.output);
+        get_messages<typename defs::lcd_update_out>(bags).push_back(state.output);
 
         return bags;
     }

@@ -87,6 +87,7 @@ namespace drivers {
                 char buf[2];
                 buf[0] = (cmd >> 8);
                 buf[1] = (cmd & 0xFF);
+
                 _i2c.write(_i2c_address, buf, 2);
             }
 
@@ -102,7 +103,9 @@ namespace drivers {
                 wait_ms(50);
 
                 //Read in temperature, humidity, and both CRCs
-                _i2c.read(_i2c_address, readbuffer, 6);
+                if (_i2c.read(_i2c_address, readbuffer, 6)) {
+                    return false;
+                }
 
                 //copy temperature bytes to uint16_t
                 temperature_word = (readbuffer[0] << 8) | readbuffer[1];
@@ -154,18 +157,21 @@ namespace drivers {
              *        sensor is connected.
              */
              sht31(PinName sda, PinName scl) : _i2c(sda, scl) {
+                 _i2c.frequency(1000000);
                  _i2c_address = (SHT31_DEFAULT_ADDR << 1);
                  reset();
                  read_status();
+                 wait(1);
+             }
+
+             bool update_from_sensor(void) {
+                 return read_temperature_humidity();
              }
 
              /**
               * @brief Read sensor data and return temperature value
               */
              double read_temperature(void) {
-                 if (! read_temperature_humidity()) {
-                     cadmium::embedded::embedded_error::hard_fault("SHT31 TEMPERATURE CRC FAIL");
-                 }
                  return _temperature;
              }
 
@@ -173,9 +179,6 @@ namespace drivers {
               * @brief Read sensor data and return humidity value
               */
              double read_humidity(void) {
-                 if (! read_temperature_humidity()) {
-                     cadmium::embedded::embedded_error::hard_fault("SHT31 HUMIDITY CRC FAIL");
-                 }
                  return _humidity;
              }
 

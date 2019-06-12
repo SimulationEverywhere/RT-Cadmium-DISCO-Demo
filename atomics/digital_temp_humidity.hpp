@@ -31,9 +31,11 @@ using namespace std;
 
 //Port definition
 struct digitalTemperatureHumidity_defs{
-    struct temperature_out : public out_port<float> { };
-    struct humidity_out : public out_port<float> { };
+    struct temperature_out : public out_port<double> { };
+    struct humidity_out : public out_port<double> { };
 };
+
+
 
 template<typename TIME>
 class DigitalTemperatureHumidity {
@@ -41,7 +43,7 @@ class DigitalTemperatureHumidity {
 
 public:
     //Parameters to be overwriten when instantiating the atomic model
-    drivers::sht31* temp_humid_sensor; //(PB_9, PB_8);
+
     TIME   pollingRate;
 
     // default constructor
@@ -54,15 +56,22 @@ public:
     }
     DigitalTemperatureHumidity(PinName sda, PinName scl, TIME rate) {
         pollingRate = rate;
-        temp_humid_sensor = new drivers::sht31(sda, scl);
-        state.temperature = temp_humid_sensor->read_temperature();
-        state.humidity = temp_humid_sensor->read_humidity();
+        state.temp_humid_sensor = new drivers::sht31(sda,scl);
+
+        if (state.temp_humid_sensor->update_from_sensor()) {
+            state.temperature = state.temp_humid_sensor->read_temperature();
+            state.humidity = state.temp_humid_sensor->read_humidity();
+        } else {
+            state.temperature = NAN;
+            state.humidity = NAN;
+        }
     }
 
     // state definition
     struct state_type{
-        float temperature;
-        float humidity;
+        double temperature;
+        double humidity;
+        drivers::sht31* temp_humid_sensor;
     };
     state_type state;
 
@@ -72,8 +81,14 @@ public:
 
     // internal transition
     void internal_transition() {
-        state.temperature = temp_humid_sensor->read_temperature();
-        state.humidity = temp_humid_sensor->read_humidity();
+        if (state.temp_humid_sensor->update_from_sensor()) {
+            state.temperature = state.temp_humid_sensor->read_temperature();
+            state.humidity = state.temp_humid_sensor->read_humidity();
+        } else {
+            state.temperature = NAN;
+            state.humidity = NAN;
+        }
+
     }
 
     // external transition
@@ -91,8 +106,9 @@ public:
     typename make_message_bags<output_ports>::type output() const {
         typename make_message_bags<output_ports>::type bags;
 
-        get_messages<typename defs::temperature_out>(bags).push_back(state.temperature);
-        get_messages<typename defs::humidity_out>(bags).push_back(state.humidity);
+            get_messages<typename defs::temperature_out>(bags).push_back(state.temperature);
+            get_messages<typename defs::humidity_out>(bags).push_back(state.humidity);
+
 
         return bags;
     }
@@ -103,7 +119,7 @@ public:
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename DigitalTemperatureHumidity<TIME>::state_type& i) {
-        os << "Temperature: " ;//<< i.temperature << ", Humidity: " << i.humidity;
+        os << "Temperature: " << to_string(i.temperature) << ", Humidity: " << to_string(i.humidity);
         return os;
     }
 };
@@ -112,7 +128,7 @@ public:
 using namespace cadmium;
 using namespace std;
 
-const char* LCD_FILE = "./inputs/temperature_in.txt"
+//const char* LCD_FILE = "./inputs/temperature_in.txt"
 
 //Port definition
 struct digitalTemperatureHumidity_defs{

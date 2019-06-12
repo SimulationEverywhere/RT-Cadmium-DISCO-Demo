@@ -1,12 +1,6 @@
 /**
-* NOTE: THIS CODE IS UNTESTED - THE BOARD USED AT ARSLABS DOES NOT HAVE A DAC
-*
-* Ben Earle
+* Kyle Bjornson
 * ARSLab - Carleton University
-*
-* Analog Output:
-* Model to interface with a analog output pin for Embedded Cadmium.
-*
 */
 
 #ifndef BOOST_SIMULATION_PDEVS_ANALOGOUTPUT_HPP
@@ -27,6 +21,18 @@
 #include <limits>
 #include <random>
 
+struct lcd_update{
+    char characters[16][17];
+    //std::list<lcd_update_line> lines;
+    //uint32_t background_colour;
+};
+
+//struct lcd_update_line {
+    //uint8_t line_index;
+    //char* characters;
+    //Text_AlignModeTypdef alignment;
+//};
+
 #ifdef ECADMIUM
   #include "../mbed.h"
   #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
@@ -36,16 +42,15 @@
 
   //Port definition
   struct LCD_defs{
-    struct in : public in_port<std::string> {};
+    struct in : public in_port<lcd_update> {};
   };
 
   template<typename TIME>
   class LCD {
   using defs=LCD_defs; // putting definitions in context
   public:
-    //Parameters to be overwriten when instantiating the atomic model
+
     LCD_DISCO_F429ZI lcd;
-    uint8_t text[40];
 
     // default c onstructor
     LCD() noexcept{
@@ -57,7 +62,7 @@
 
     // state definition
     struct state_type{
-      std::string output;
+      lcd_update output;
     };
     state_type state;
 
@@ -73,8 +78,11 @@
       for(const auto &x : get_messages<typename defs::in>(mbs)){
         state.output = x;
       }
-      //sprintf((char*)text,  = %.2f", temp_humid_sensor.read_temperature());
-      lcd.DisplayStringAt(0, LINE(3), (uint8_t *)&state.output, LEFT_MODE);
+      //sprintf((char*)text,  = %.2f", temp_humid_sensor.read_temperature()); //(uint8_t *)&state.output
+      for (uint8_t i = 0; i < 16; i++) {
+          lcd.DisplayStringAt(0, LINE(i), (uint8_t*) state.output.characters[i], LEFT_MODE);
+      }
+      //lcd.DisplayStringAt(0, LINE(3), (uint8_t*)state.output.c_str(), LEFT_MODE);
 
     }
     // confluence transition
@@ -95,7 +103,7 @@
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename LCD<TIME>::state_type& i) {
-      os << "Printed: " << i.output;
+      os << "Printed: " << "1";//i.output;
       return os;
     }
   };

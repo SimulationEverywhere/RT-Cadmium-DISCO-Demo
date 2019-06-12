@@ -21,17 +21,19 @@
 #include <limits>
 #include <random>
 
-struct lcd_update{
-    char characters[16][17];
-    //std::list<lcd_update_line> lines;
-    //uint32_t background_colour;
+
+
+struct lcd_update_line {
+    uint8_t line_index;
+    char characters[17];
+    //enum alignment;
 };
 
-//struct lcd_update_line {
-    //uint8_t line_index;
-    //char* characters;
-    //Text_AlignModeTypdef alignment;
-//};
+struct lcd_update{
+    //char characters[16][17];
+    std::list<lcd_update_line> lines;
+    //uint32_t background_colour;
+};
 
 #ifdef ECADMIUM
   #include "../mbed.h"
@@ -78,10 +80,14 @@ struct lcd_update{
       for(const auto &x : get_messages<typename defs::in>(mbs)){
         state.output = x;
       }
-      //sprintf((char*)text,  = %.2f", temp_humid_sensor.read_temperature()); //(uint8_t *)&state.output
-      for (uint8_t i = 0; i < 16; i++) {
-          lcd.DisplayStringAt(0, LINE(i), (uint8_t*) state.output.characters[i], LEFT_MODE);
+
+      for (lcd_update_line line : state.output.lines) {
+          lcd.DisplayStringAt(0, LINE(line.line_index), (uint8_t*) line.characters, LEFT_MODE);
       }
+      //sprintf((char*)text,  = %.2f", temp_humid_sensor.read_temperature()); //(uint8_t *)&state.output
+      //for (uint8_t i = 0; i < 16; i++) {
+          //lcd.DisplayStringAt(0, LINE(i), (uint8_t*) state.output.characters[i], LEFT_MODE);
+     // }
       //lcd.DisplayStringAt(0, LINE(3), (uint8_t*)state.output.c_str(), LEFT_MODE);
 
     }

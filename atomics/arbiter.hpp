@@ -64,11 +64,19 @@ public:
 
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
+        lcd_update_line update_line;
         for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-            sprintf(state.output.characters[2], "Temperature = %.2f", x);
+            update_line.line_index = 1;
+            //update_line.alignment = LEFT_MODE;
+            sprintf(update_line.characters, "Temp = %.2f", x);
+            state.output.lines.push_front(update_line);
         }
         for(const auto &x : get_messages<typename defs::humidity_in>(mbs)){
-            sprintf(state.output.characters[3], "Humidity = %.2f", x);
+            //sprintf(state.output.characters[3], "Humidity = %.2f", x);
+            update_line.line_index = 2;
+            //update_line.alignment = LEFT_MODE;
+            sprintf(update_line.characters, "Humidity = %.2f", x);
+            state.output.lines.push_front(update_line);
         }
 
         state.propagating = true;

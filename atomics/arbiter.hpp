@@ -29,14 +29,79 @@ using namespace std;
 
 //Port definition
 struct arbiter_defs {
-    struct lcd_update_out : public out_port<lcd_update> { };
+    struct lcd_update_out : public out_port<struct lcd_update> { };
     struct temperature_in : public in_port<float> { };
     struct humidity_in : public in_port<float> { };
+    struct ts_in : public in_port<struct cartesian_coordinates> { };
 };
 
 template<typename TIME>
 class Arbiter {
     using defs=arbiter_defs; // putting definitions in context
+
+private:
+
+    void update_temperature(double temperature) {
+
+        lcd_update_line update_line;
+
+        update_line.line_index = 3;
+        update_line.alignment = CENTER_MODE;
+
+        if (isnan(temperature)) {
+            sprintf(update_line.characters, "UNKNOWN");
+        } else {
+            sprintf(update_line.characters, "%.2f C", temperature);
+        }
+        state.output.lines.push_front(update_line);
+    }
+
+    void update_humidity(double humidity) {
+
+        lcd_update_line update_line;
+
+        update_line.line_index = 7;
+        update_line.alignment = CENTER_MODE;
+
+        if (isnan(humidity)) {
+            sprintf(update_line.characters, "UNKNOWN");
+        } else {
+            sprintf(update_line.characters, "%.2f %%", humidity);
+        }
+        state.output.lines.push_front(update_line);
+    }
+
+    void populate_static_lines(void) {
+
+        lcd_update_line update_line;
+
+        update_line.line_index = 1;
+        update_line.alignment = CENTER_MODE;
+        sprintf(update_line.characters, "---Temperature---");
+        state.output.lines.push_front(update_line);
+
+        update_line.line_index = 5;
+        update_line.alignment = CENTER_MODE;
+        sprintf(update_line.characters, "----Humidity----");
+        state.output.lines.push_front(update_line);
+    }
+
+    void update_lcd_colour(double temperature) {
+        if (isnan(temperature)) {
+            state.output.lcd_colour = LCD_COLOR_GRAY;
+        } else if (temperature <= 18) {
+            state.output.lcd_colour = LCD_COLOR_DARKBLUE;
+        } else if (temperature <= 22) {
+            state.output.lcd_colour = LCD_COLOR_LIGHTBLUE;
+        } else if (temperature <= 25) {
+            state.output.lcd_colour = LCD_COLOR_GREEN;
+        } else if (temperature <= 28) {
+            state.output.lcd_colour = LCD_COLOR_ORANGE;
+        } else {
+            state.output.lcd_colour = LCD_COLOR_DARKRED;
+        }
+    }
+
 
 public:
 
@@ -53,7 +118,7 @@ public:
     state_type state;
     // ports definition
 
-    using input_ports=std::tuple<typename defs::temperature_in, typename defs::humidity_in>;
+    using input_ports=std::tuple<typename defs::temperature_in, typename defs::humidity_in, typename defs::ts_in>;
     using output_ports=std::tuple<typename defs::lcd_update_out>;
 
     // internal transition
@@ -64,65 +129,35 @@ public:
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
 
-        state.output.lines.clear();
-        lcd_update_line update_line;
 
+        state.output.lines.clear();
         state.output.text_colour = LCD_COLOR_WHITE;
 
         for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-
-            if (isnan(x)) {
-                state.output.lcd_colour = LCD_COLOR_GRAY;
-            } else if (x <= 18) {
-                state.output.lcd_colour = LCD_COLOR_DARKBLUE;
-            } else if (x <= 22) {
-                state.output.lcd_colour = LCD_COLOR_LIGHTBLUE;
-            } else if (x <= 25) {
-                state.output.lcd_colour = LCD_COLOR_GREEN;
-            } else if (x <= 28) {
-                state.output.lcd_colour = LCD_COLOR_ORANGE;
-            } else {
-                state.output.lcd_colour = LCD_COLOR_DARKRED;
-            }
-
-            update_line.line_index = 3;
-            update_line.alignment = CENTER_MODE;
-
-            if (isnan(x)) {
-                sprintf(update_line.characters, "UNKNOWN");
-            } else {
-                sprintf(update_line.characters, "%.2f C", x);
-            }
-
-            state.output.lines.push_front(update_line);
-
+            update_temperature(x);
+            update_lcd_colour(x);
 
         }
 
         for(const auto &x : get_messages<typename defs::humidity_in>(mbs)){
-            update_line.line_index = 7;
-            update_line.alignment = CENTER_MODE;
-
-            if (isnan(x)) {
-                sprintf(update_line.characters, "UNKNOWN");
-            } else {
-                sprintf(update_line.characters, "%.2f %%", x);
-            }
-
-            state.output.lines.push_front(update_line);
+            update_humidity(x);
         }
 
-        update_line.line_index = 1;
-        update_line.alignment = CENTER_MODE;
-        sprintf(update_line.characters, "---Temperature---");
-        state.output.lines.push_front(update_line);
+        for(const auto &x : get_messages<typename defs::ts_in>(mbs)){
+            struct cartesian_coordinates coordinates = x;
+        }
 
-        update_line.line_index = 5;
-        update_line.alignment = CENTER_MODE;
-        sprintf(update_line.characters, "----Humidity----");
-        state.output.lines.push_front(update_line);
+        populate_static_lines();
+
+
+
+        //if (x != 0) {
+        //    state.output.lcd_colour = 0x00000000;
+        //}
+
 
         state.propagating = true;
+
     }
     // confluence transition
     void confluence_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {

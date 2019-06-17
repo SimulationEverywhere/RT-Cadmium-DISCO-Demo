@@ -32,13 +32,10 @@
 #include "../atomics/lcd.hpp"
 #include "../atomics/digital_temp_humidity.hpp"
 #include "../atomics/arbiter.hpp"
+#include "../atomics/touch_screen.hpp"
 
 
 #include <cadmium/embedded/embedded_error.hpp>
-
-//#include "../drivers/sht31.hpp"
-//#include "../drivers/TS_DISCO_F429ZI/TS_DISCO_F429ZI.h"
-//#include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
 
 #ifdef ECADMIUM
   #include "../mbed.h"
@@ -164,34 +161,40 @@ int main(int argc, char ** argv) {
   using CoupledModelPtr=std::shared_ptr<cadmium::dynamic::modeling::coupled<TIME>>;
 
   /********************************************/
-  /***************** blinky *******************/
+  /******* Digital Temperature Sensor *********/
   /********************************************/
 
   AtomicModelPtr digital_temp_humidity1 = cadmium::dynamic::translate::make_dynamic_atomic_model<DigitalTemperatureHumidity, TIME>("digital_temp_humidity1", PC_9, PA_8);
 
-  /********************************************/
-  /********** interruptInput1 *******************/
-  /********************************************/
-  AtomicModelPtr arbiter1 = cadmium::dynamic::translate::make_dynamic_atomic_model<Arbiter, TIME>("arbiter1");
 
   /********************************************/
-  /********* DigitalOutput1 *******************/
+  /**************** LCD ***********************/
   /********************************************/
   AtomicModelPtr lcd1 = cadmium::dynamic::translate::make_dynamic_atomic_model<LCD, TIME>("lcd1");
+
+  /********************************************/
+  /************ Touch Screen ******************/
+  /********************************************/
+  AtomicModelPtr ts1 = cadmium::dynamic::translate::make_dynamic_atomic_model<TouchScreen, TIME>("ts1");
+
+  /********************************************/
+  /**************** Arbiter *******************/
+  /********************************************/
+  AtomicModelPtr arbiter1 = cadmium::dynamic::translate::make_dynamic_atomic_model<Arbiter, TIME>("arbiter1");
 
   /************************/
   /*******TOP MODEL********/
   /************************/
   cadmium::dynamic::modeling::Ports iports_TOP = {};
   cadmium::dynamic::modeling::Ports oports_TOP = {};
-  cadmium::dynamic::modeling::Models submodels_TOP =  {digital_temp_humidity1, arbiter1, lcd1};
+  cadmium::dynamic::modeling::Models submodels_TOP =  {digital_temp_humidity1, arbiter1, lcd1, ts1};
   cadmium::dynamic::modeling::EICs eics_TOP = {};
   cadmium::dynamic::modeling::EOCs eocs_TOP = {};
   cadmium::dynamic::modeling::ICs ics_TOP = {
     cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::temperature_out, arbiter_defs::temperature_in>("digital_temp_humidity1","arbiter1"),
     cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::humidity_out, arbiter_defs::humidity_in>("digital_temp_humidity1","arbiter1"),
+    cadmium::dynamic::translate::make_IC<TS_defs::out, arbiter_defs::ts_in>("ts1", "arbiter1"),
     cadmium::dynamic::translate::make_IC<arbiter_defs::lcd_update_out, LCD_defs::in>("arbiter1","lcd1"),
-    //cadmium::dynamic::translate::make_IC<interruptInput_defs::out, blinky_defs::in>("interruptInput1", "blinky1")
   };
   CoupledModelPtr TOP = std::make_shared<cadmium::dynamic::modeling::coupled<TIME>>(
     "TOP",
@@ -206,7 +209,7 @@ int main(int argc, char ** argv) {
   ///****************////
   //Logging not possible on DISCO: UART over SWD USB not supported
   cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
-  r.run_until(NDTime("00:10:00:000"));
+  r.run_until(TIME::infinity());
   #ifndef ECADMIUM
     return 0;
   #endif

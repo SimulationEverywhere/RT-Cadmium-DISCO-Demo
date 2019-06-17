@@ -25,6 +25,7 @@
 //This class will interface with a digital input pin.
 #include "../mbed.h"
 #include "../drivers/sht31.hpp"
+#include <cadmium/embedded/embedded_error.hpp>
 
 using namespace cadmium;
 using namespace std;
@@ -93,8 +94,7 @@ public:
 
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
-        MBED_ASSERT(false);
-        throw std::logic_error("External transition called in a model with no input ports");
+        cadmium::embedded::embedded_error::hard_fault("External transition called in a model with no input ports");
     }
     // confluence transition
     void confluence_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {

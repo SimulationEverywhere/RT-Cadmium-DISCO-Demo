@@ -71,7 +71,7 @@ public:
 
         for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
 
-            if (x == NAN) {
+            if (isnan(x)) {
                 state.output.lcd_colour = LCD_COLOR_GRAY;
             } else if (x <= 18) {
                 state.output.lcd_colour = LCD_COLOR_DARKBLUE;
@@ -88,7 +88,7 @@ public:
             update_line.line_index = 3;
             update_line.alignment = CENTER_MODE;
 
-            if (x == NAN) {
+            if (isnan(x)) {
                 sprintf(update_line.characters, "UNKNOWN");
             } else {
                 sprintf(update_line.characters, "%.2f C", x);
@@ -103,7 +103,7 @@ public:
             update_line.line_index = 7;
             update_line.alignment = CENTER_MODE;
 
-            if (x == NAN) {
+            if (isnan(x)) {
                 sprintf(update_line.characters, "UNKNOWN");
             } else {
                 sprintf(update_line.characters, "%.2f %%", x);

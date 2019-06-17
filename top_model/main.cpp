@@ -204,6 +204,7 @@ int main(int argc, char ** argv) {
   );
 
   ///****************////
+  //Logging not possible on DISCO: UART over SWD USB not supported
   cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
   r.run_until(NDTime("00:10:00:000"));
   #ifndef ECADMIUM

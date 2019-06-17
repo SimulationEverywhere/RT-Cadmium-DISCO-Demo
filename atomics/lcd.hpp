@@ -23,21 +23,23 @@
 
 
 
-struct lcd_update_line {
-    uint8_t line_index;
-    char characters[17];
-    //enum alignment;
-};
 
-struct lcd_update{
-    //char characters[16][17];
-    std::list<lcd_update_line> lines;
-    //uint32_t background_colour;
-};
 
 #ifdef ECADMIUM
   #include "../mbed.h"
   #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
+
+  struct lcd_update_line {
+      uint8_t line_index;
+      char characters[17];
+      Text_AlignModeTypdef alignment;
+  };
+
+  struct lcd_update{
+      std::list<lcd_update_line> lines;
+      uint32_t lcd_colour;
+      uint32_t text_colour;
+  };
 
   using namespace cadmium;
   using namespace std;
@@ -51,15 +53,14 @@ struct lcd_update{
   class LCD {
   using defs=LCD_defs; // putting definitions in context
   public:
-
     LCD_DISCO_F429ZI lcd;
 
     // default c onstructor
     LCD() noexcept{
         BSP_LCD_SetFont(&Font20);
-        lcd.Clear(LCD_COLOR_BLUE);
-        lcd.SetBackColor(LCD_COLOR_BLUE);
-        lcd.SetTextColor(LCD_COLOR_WHITE);
+        //lcd.Clear(LCD_COLOR_BLUE);
+        //lcd.SetBackColor(LCD_COLOR_BLUE);
+        //lcd.SetTextColor(LCD_COLOR_WHITE);
     }
 
     // state definition
@@ -81,14 +82,13 @@ struct lcd_update{
         state.output = x;
       }
 
+      lcd.Clear(state.output.lcd_colour);
+      lcd.SetBackColor(state.output.lcd_colour);
+      lcd.SetTextColor(state.output.text_colour);
+
       for (lcd_update_line line : state.output.lines) {
-          lcd.DisplayStringAt(0, LINE(line.line_index), (uint8_t*) line.characters, LEFT_MODE);
+          lcd.DisplayStringAt(0, LINE(line.line_index), (uint8_t*) line.characters, line.alignment);
       }
-      //sprintf((char*)text,  = %.2f", temp_humid_sensor.read_temperature()); //(uint8_t *)&state.output
-      //for (uint8_t i = 0; i < 16; i++) {
-          //lcd.DisplayStringAt(0, LINE(i), (uint8_t*) state.output.characters[i], LEFT_MODE);
-     // }
-      //lcd.DisplayStringAt(0, LINE(3), (uint8_t*)state.output.c_str(), LEFT_MODE);
 
     }
     // confluence transition

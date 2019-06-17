@@ -59,25 +59,68 @@ public:
     // internal transition
     void internal_transition() {
         state.propagating = false;
-        //state.lightOn=!state.lightOn;
     }
 
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
+
+        state.output.lines.clear();
         lcd_update_line update_line;
+
+        state.output.text_colour = LCD_COLOR_WHITE;
+
         for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-            update_line.line_index = 1;
-            //update_line.alignment = LEFT_MODE;
-            sprintf(update_line.characters, "Temp = %.2f", x);
+
+            if (x == NAN) {
+                state.output.lcd_colour = LCD_COLOR_GRAY;
+            } else if (x <= 18) {
+                state.output.lcd_colour = LCD_COLOR_DARKBLUE;
+            } else if (x <= 22) {
+                state.output.lcd_colour = LCD_COLOR_LIGHTBLUE;
+            } else if (x <= 25) {
+                state.output.lcd_colour = LCD_COLOR_GREEN;
+            } else if (x <= 28) {
+                state.output.lcd_colour = LCD_COLOR_ORANGE;
+            } else {
+                state.output.lcd_colour = LCD_COLOR_DARKRED;
+            }
+
+            update_line.line_index = 3;
+            update_line.alignment = CENTER_MODE;
+
+            if (x == NAN) {
+                sprintf(update_line.characters, "UNKNOWN");
+            } else {
+                sprintf(update_line.characters, "%.2f C", x);
+            }
+
             state.output.lines.push_front(update_line);
+
+
         }
+
         for(const auto &x : get_messages<typename defs::humidity_in>(mbs)){
-            //sprintf(state.output.characters[3], "Humidity = %.2f", x);
-            update_line.line_index = 2;
-            //update_line.alignment = LEFT_MODE;
-            sprintf(update_line.characters, "Humidity = %.2f", x);
+            update_line.line_index = 7;
+            update_line.alignment = CENTER_MODE;
+
+            if (x == NAN) {
+                sprintf(update_line.characters, "UNKNOWN");
+            } else {
+                sprintf(update_line.characters, "%.2f %%", x);
+            }
+
             state.output.lines.push_front(update_line);
         }
+
+        update_line.line_index = 1;
+        update_line.alignment = CENTER_MODE;
+        sprintf(update_line.characters, "---Temperature---");
+        state.output.lines.push_front(update_line);
+
+        update_line.line_index = 5;
+        update_line.alignment = CENTER_MODE;
+        sprintf(update_line.characters, "----Humidity----");
+        state.output.lines.push_front(update_line);
 
         state.propagating = true;
     }

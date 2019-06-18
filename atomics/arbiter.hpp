@@ -129,36 +129,30 @@ public:
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
 
+        const auto temperature_vector = get_messages<typename defs::temperature_in>(mbs);
+        const auto humidity_vector = get_messages<typename defs::humidity_in>(mbs);
 
-        state.output.lines.clear();
-        state.output.text_colour = LCD_COLOR_WHITE;
+        if (temperature_vector.size() == 1 && humidity_vector.size() == 1) {
 
-        for(const auto &x : get_messages<typename defs::temperature_in>(mbs)){
-            update_temperature(x);
-            update_lcd_colour(x);
+            state.output.lines.clear();
+            state.output.text_colour = LCD_COLOR_WHITE;
 
+            update_temperature(temperature_vector.front());
+            update_lcd_colour(temperature_vector.front());
+            update_humidity(humidity_vector.front());
+
+            populate_static_lines();
         }
 
-        for(const auto &x : get_messages<typename defs::humidity_in>(mbs)){
-            update_humidity(x);
+        const auto coordinates_vector = get_messages<typename defs::ts_in>(mbs);
+        if (coordinates_vector.size() == 1) {
+            //struct cartesian_coordinates coordinates = x;
         }
-
-        for(const auto &x : get_messages<typename defs::ts_in>(mbs)){
-            struct cartesian_coordinates coordinates = x;
-        }
-
-        populate_static_lines();
-
-
-
-        //if (x != 0) {
-        //    state.output.lcd_colour = 0x00000000;
-        //}
-
 
         state.propagating = true;
 
     }
+
     // confluence transition
     void confluence_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
         internal_transition();

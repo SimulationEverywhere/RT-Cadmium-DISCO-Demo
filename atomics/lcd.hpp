@@ -55,6 +55,7 @@
     // default c onstructor
     LCD() noexcept{
         BSP_LCD_SetFont(&Font20);
+
     }
 
     // state definition

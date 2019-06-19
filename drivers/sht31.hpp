@@ -41,7 +41,7 @@
 #define SHT31_HEATERDIS             0x3066
 
 #include <mbed.h>
-#include <cadmium/embedded/embedded_error.hpp>
+#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
 namespace drivers {
 

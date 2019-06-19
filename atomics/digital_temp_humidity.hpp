@@ -21,11 +21,11 @@
 #include <limits>
 #include <random>
 
-#ifdef ECADMIUM
+#ifdef RT_ARM_MBED
 //This class will interface with a digital input pin.
 #include "../mbed.h"
 #include "../drivers/sht31.hpp"
-#include <cadmium/embedded/embedded_error.hpp>
+#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
 using namespace cadmium;
 using namespace std;
@@ -140,6 +140,6 @@ class DigitalInput : public iestream_input<bool,TIME, digitalTemperatureHumidity
 public:
     DigitalInput() : iestream_input<bool,TIME, digitalTemperatureHumidity_defs>(file_path) {}
 };
-#endif // ECADMIUM
+#endif // RT_ARM_MBED
 
 #endif // DIGITAL_TEMPERATURE_SH31_HPP

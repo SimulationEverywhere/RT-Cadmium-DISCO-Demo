@@ -30,9 +30,7 @@ using namespace std;
 //Port definition
 struct arbiter_defs {
     struct lcd_update_out : public out_port<struct lcd_update> { };
-    struct temperature_in : public in_port<float> { };
-    struct humidity_in : public in_port<float> { };
-    struct ts_in : public in_port<struct cartesian_coordinates> { };
+    struct sensor_in : public in_port<struct sensor_data> { };
 };
 
 template<typename TIME>
@@ -41,7 +39,7 @@ class Arbiter {
 
 private:
 
-    void update_temperature(double temperature) {
+    void update_temperature(float temperature) {
 
         lcd_update_line update_line;
 
@@ -56,7 +54,7 @@ private:
         state.output.lines.push_front(update_line);
     }
 
-    void update_humidity(double humidity) {
+    void update_humidity(float humidity) {
 
         lcd_update_line update_line;
 
@@ -86,7 +84,7 @@ private:
         state.output.lines.push_front(update_line);
     }
 
-    void update_lcd_colour(double temperature) {
+    void update_lcd_colour(float temperature) {
         if (isnan(temperature)) {
             state.output.lcd_colour = LCD_COLOR_GRAY;
         } else if (temperature <= 18) {
@@ -100,6 +98,17 @@ private:
         } else {
             state.output.lcd_colour = LCD_COLOR_DARKRED;
         }
+    }
+
+    void update_sensor_name(const char *sensor_name) {
+
+        lcd_update_line update_line;
+
+        update_line.line_index = 10;
+        update_line.alignment = CENTER_MODE;
+        sprintf(update_line.characters, sensor_name);
+
+        state.output.lines.push_front(update_line);
     }
 
 
@@ -116,9 +125,9 @@ public:
         lcd_update output;
     };
     state_type state;
-    // ports definition
 
-    using input_ports=std::tuple<typename defs::temperature_in, typename defs::humidity_in, typename defs::ts_in>;
+    // ports definition
+    using input_ports=std::tuple<typename defs::sensor_in>;
     using output_ports=std::tuple<typename defs::lcd_update_out>;
 
     // internal transition
@@ -129,28 +138,23 @@ public:
     // external transition
     void external_transition(TIME e, typename make_message_bags<input_ports>::type mbs) {
 
-        const auto temperature_vector = get_messages<typename defs::temperature_in>(mbs);
-        const auto humidity_vector = get_messages<typename defs::humidity_in>(mbs);
+        const std::vector<struct sensor_data> data = get_messages<typename defs::sensor_in>(mbs);
 
-        if (temperature_vector.size() == 1 && humidity_vector.size() == 1) {
+        if (data.size() == 1) {
 
             state.output.lines.clear();
             state.output.text_colour = LCD_COLOR_WHITE;
 
-            update_temperature(temperature_vector.front());
-            update_lcd_colour(temperature_vector.front());
-            update_humidity(humidity_vector.front());
+            update_temperature(data.front().temperature);
+            update_lcd_colour(data.front().temperature);
+            update_humidity(data.front().humidity);
+
+            update_sensor_name(data.front().sensor_name);
 
             populate_static_lines();
+
+            state.propagating = true;
         }
-
-        const auto coordinates_vector = get_messages<typename defs::ts_in>(mbs);
-        if (coordinates_vector.size() == 1) {
-            //struct cartesian_coordinates coordinates = x;
-        }
-
-        state.propagating = true;
-
     }
 
     // confluence transition
@@ -162,6 +166,7 @@ public:
     // output function
     typename make_message_bags<output_ports>::type output() const {
         typename make_message_bags<output_ports>::type bags;
+
         get_messages<typename defs::lcd_update_out>(bags).push_back(state.output);
 
         return bags;

@@ -11,33 +11,26 @@
 #include <string>
 #define MISSED_DEADLINE_TOLERANCE 1000000
 
-#include <cadmium/modeling/coupled_model.hpp>
-#include <cadmium/modeling/ports.hpp>
-#include <cadmium/modeling/dynamic_model_translator.hpp>
-#include <cadmium/concept/coupled_model_assert.hpp>
-#include <cadmium/modeling/dynamic_coupled.hpp>
-#include <cadmium/modeling/dynamic_atomic.hpp>
-#include <cadmium/engine/pdevs_dynamic_runner.hpp>
-#include <cadmium/logger/tuple_to_ostream.hpp>
-#include <cadmium/logger/common_loggers.hpp>
+#include <cadmium.h>
 
 #include <NDTime.hpp>
 #include <cadmium/io/iestream.hpp>
 
 
-#include <cadmium/embedded/io/interruptInput.hpp>
-#include <cadmium/embedded/io/digitalOutput.hpp>
+#include <cadmium/real_time/arm_mbed/io/analogInput.hpp>
+#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
 
 #include "../atomics/lcd.hpp"
 #include "../atomics/digital_temp_humidity.hpp"
 #include "../atomics/arbiter.hpp"
 #include "../atomics/touch_screen.hpp"
+#include "../atomics/switch.hpp"
 
 
-#include <cadmium/embedded/embedded_error.hpp>
 
-#ifdef ECADMIUM
+
+#ifdef RT_ARM_MBED
   #include "../mbed.h"
 #else
   // When simulating the model it will use these files as IO in place of the pins specified.
@@ -123,8 +116,8 @@ int main(int argc, char ** argv) {
     // while(1);
 
 
-  #ifdef ECADMIUM
-      //Logging is done over cout in ECADMIUM
+  #ifdef RT_ARM_MBED
+      //Logging is done over cout in RT_ARM_MBED
       struct oss_sink_provider{
         static std::ostream& sink(){
           return cout;
@@ -165,6 +158,7 @@ int main(int argc, char ** argv) {
   /********************************************/
 
   AtomicModelPtr digital_temp_humidity1 = cadmium::dynamic::translate::make_dynamic_atomic_model<DigitalTemperatureHumidity, TIME>("digital_temp_humidity1", PC_9, PA_8);
+  AtomicModelPtr analog_temp1 = cadmium::dynamic::translate::make_dynamic_atomic_model<AnalogInput, TIME>("analog_temp1", PF_6, TIME("00:00:01:000"));
 
 
   /********************************************/
@@ -182,18 +176,26 @@ int main(int argc, char ** argv) {
   /********************************************/
   AtomicModelPtr arbiter1 = cadmium::dynamic::translate::make_dynamic_atomic_model<Arbiter, TIME>("arbiter1");
 
+  /********************************************/
+  /**************** Switch *******************/
+  /********************************************/
+  AtomicModelPtr switch1 = cadmium::dynamic::translate::make_dynamic_atomic_model<Switch, TIME>("switch1");
+
   /************************/
   /*******TOP MODEL********/
   /************************/
   cadmium::dynamic::modeling::Ports iports_TOP = {};
   cadmium::dynamic::modeling::Ports oports_TOP = {};
-  cadmium::dynamic::modeling::Models submodels_TOP =  {digital_temp_humidity1, arbiter1, lcd1, ts1};
+  cadmium::dynamic::modeling::Models submodels_TOP =  {digital_temp_humidity1, analog_temp1, arbiter1, lcd1, ts1, switch1};
   cadmium::dynamic::modeling::EICs eics_TOP = {};
   cadmium::dynamic::modeling::EOCs eocs_TOP = {};
   cadmium::dynamic::modeling::ICs ics_TOP = {
-    cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::temperature_out, arbiter_defs::temperature_in>("digital_temp_humidity1","arbiter1"),
-    cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::humidity_out, arbiter_defs::humidity_in>("digital_temp_humidity1","arbiter1"),
-    cadmium::dynamic::translate::make_IC<TS_defs::out, arbiter_defs::ts_in>("ts1", "arbiter1"),
+    cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::temperature_out, switch_defs::temperature_in_1>("digital_temp_humidity1","switch1"),
+    cadmium::dynamic::translate::make_IC<digitalTemperatureHumidity_defs::humidity_out, switch_defs::humidity_in_1>("digital_temp_humidity1","switch1"),
+    cadmium::dynamic::translate::make_IC<analogInput_defs::out, switch_defs::temperature_in_2>("analog_temp1","switch1"),
+
+    cadmium::dynamic::translate::make_IC<TS_defs::out, switch_defs::ts_in>("ts1", "switch1"),
+    cadmium::dynamic::translate::make_IC<switch_defs::sensor_out, arbiter_defs::sensor_in>("switch1", "arbiter1"),
     cadmium::dynamic::translate::make_IC<arbiter_defs::lcd_update_out, LCD_defs::in>("arbiter1","lcd1"),
   };
   CoupledModelPtr TOP = std::make_shared<cadmium::dynamic::modeling::coupled<TIME>>(
@@ -210,7 +212,7 @@ int main(int argc, char ** argv) {
   //Logging not possible on DISCO: UART over SWD USB not supported
   cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
   r.run_until(TIME::infinity());
-  #ifndef ECADMIUM
+  #ifndef RT_ARM_MBED
     return 0;
   #endif
 }

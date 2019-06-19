@@ -22,7 +22,7 @@
 #include <random>
 
 
-#ifdef ECADMIUM
+#ifdef RT_ARM_MBED
   #include "../mbed.h"
   #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
 
@@ -113,7 +113,7 @@
   using namespace cadmium;
   using namespace std;
 
-  const char* LCD_FILE = "./outputs/LCD_out.txt"
+  const char* LCD_FILE = "./outputs/LCD_out.txt";
 
   //Port definition
   struct LCD_defs{
@@ -125,5 +125,5 @@
     public:
       LCD() : oestream_output<std::string, TIME, LCD_defs>(LCD_FILE) {}
   };
-#endif //ECADMIUM
+#endif //RT_ARM_MBED
 #endif // DISCO_LCD_HPP

@@ -23,11 +23,11 @@
 
 
 
-#ifdef ECADMIUM
+#ifdef RT_ARM_MBED
   #include "../mbed.h"
   #include "../drivers/TS_DISCO_F429ZI/TS_DISCO_F429ZI.h"
   #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
-  #include <cadmium/embedded/embedded_error.hpp>
+  #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
   struct cartesian_coordinates {
       int x;
@@ -133,5 +133,5 @@
     public:
       LCD() : oestream_output<std::string, TIME, LCD_defs>(LCD_FILE) {}
   };
-#endif //ECADMIUM
+#endif //RT_ARM_MBED
 #endif // DISCO_TS_HPP

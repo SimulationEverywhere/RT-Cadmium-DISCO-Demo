@@ -87,16 +87,19 @@ public:
             //Check if pressing bottom of screen + some debouncing
             if (coordinates_vector.front().y > 200 && e > TIME("00:00:00:100")) {
                 state.sensor_idx = (state.sensor_idx == 1) ? 0:1;
+                state.propagating = true;
             }
 
         }
 
         for(const auto &x : get_messages<typename defs::temperature_in_1>(mbs)){
             state.sensor_update[0].temperature = x;
+            state.propagating = true;
         }
 
         for(const auto &x : get_messages<typename defs::humidity_in_1>(mbs)){
             state.sensor_update[0].humidity = x;
+            state.propagating = true;
         }
 
         for(const auto &x : get_messages<typename defs::temperature_in_2>(mbs)){
@@ -105,9 +108,10 @@ public:
             float resistance = 10000.0 * ((1.0/x) - 1);
             state.sensor_update[1].temperature =(1/((log(resistance/10000.0)/beta) + (1.0/298.15)))-273.15;
 
+            state.propagating = true;
         }
 
-        state.propagating = true;
+
 
     }
 

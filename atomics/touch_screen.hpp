@@ -124,9 +124,10 @@
   const char* LCD_FILE = "./outputs/LCD_out.txt"
 
   //Port definition
-  struct LCD_defs{
-      struct in : public in_port<std::string> {};
+  struct TS_defs{
+    struct out : public out_port<struct cartesian_coordinates> {};
   };
+
 
   template<typename TIME>
   class LCD : public oestream_output<std::string, TIME, LCD_defs>{

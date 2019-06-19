@@ -2,13 +2,12 @@
 * By: Ben Earle and Kyle Bjornson
 * ARSLab - Carleton University
 *
-* Analog Input:
-* Model to interface with a analog Input pin for Embedded Cadmium.
 */
 #include <iostream>
 #include <chrono>
 #include <algorithm>
 #include <string>
+
 #define MISSED_DEADLINE_TOLERANCE 1000000
 
 #include <cadmium.h>
@@ -16,18 +15,14 @@
 #include <NDTime.hpp>
 #include <cadmium/io/iestream.hpp>
 
-
 #include <cadmium/real_time/arm_mbed/io/analogInput.hpp>
 #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
-
 
 #include "../atomics/lcd.hpp"
 #include "../atomics/digital_temp_humidity.hpp"
 #include "../atomics/arbiter.hpp"
 #include "../atomics/touch_screen.hpp"
 #include "../atomics/switch.hpp"
-
-
 
 
 #ifdef RT_ARM_MBED
@@ -45,76 +40,6 @@ using TIME = NDTime;
 
 
 int main(int argc, char ** argv) {
-
-
-    // LCD_DISCO_F429ZI lcd;
-    // TS_DISCO_F429ZI ts;
-    //
-    // TS_StateTypeDef TS_State;
-    // uint16_t x, y;
-    // uint8_t text[40];
-    // uint8_t status;
-    //
-    // drivers::sht31 temp_humid_sensor(PB_9, PB_8);
-    // wait(1);
-    //
-    // BSP_LCD_SetFont(&Font20);
-    //
-    // lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"TOUCHSCREEN", CENTER_MODE);
-    // lcd.DisplayStringAt(0, LINE(6), (uint8_t *)"DEMO", CENTER_MODE);
-    // wait(1);
-    //
-    // status = ts.Init(lcd.GetXSize(), lcd.GetYSize());
-    //
-    // if (status != TS_OK)
-    // {
-    //     lcd.Clear(LCD_COLOR_RED);
-    //     lcd.SetBackColor(LCD_COLOR_RED);
-    //     lcd.SetTextColor(LCD_COLOR_WHITE);
-    //     lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"TOUCHSCREEN", CENTER_MODE);
-    //     lcd.DisplayStringAt(0, LINE(6), (uint8_t *)"INIT FAIL", CENTER_MODE);
-    // }
-    // else
-    // {
-    //     lcd.Clear(LCD_COLOR_GREEN);
-    //     lcd.SetBackColor(LCD_COLOR_GREEN);
-    //     lcd.SetTextColor(LCD_COLOR_WHITE);
-    //     lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"TOUCHSCREEN", CENTER_MODE);
-    //     lcd.DisplayStringAt(0, LINE(6), (uint8_t *)"INIT OK", CENTER_MODE);
-    // }
-    //
-    // wait(1);
-    // lcd.Clear(LCD_COLOR_BLUE);
-    // lcd.SetBackColor(LCD_COLOR_BLUE);
-    // lcd.SetTextColor(LCD_COLOR_WHITE);
-    //
-    //
-    // while(1)
-    // {
-    //
-    //     ts.GetState(&TS_State);
-    //     if (TS_State.TouchDetected)
-    //     {
-    //         x = TS_State.X;
-    //         y = TS_State.Y;
-    //         sprintf((char*)text, "x=%d y=%d    ", x, y);
-    //         lcd.DisplayStringAt(0, LINE(0), (uint8_t *)&text, LEFT_MODE);
-    //     }
-    //
-    //     temp_humid_sensor.update_from_sensor();
-    //     sprintf((char*)text, "Temp = %.2f", temp_humid_sensor.read_temperature());
-    //     lcd.DisplayStringAt(0, LINE(3), (uint8_t *)&text, LEFT_MODE);
-    //     sprintf((char*)text, "Humidity = %.2f", temp_humid_sensor.read_humidity());
-    //     lcd.DisplayStringAt(0, LINE(4), (uint8_t *)&text, LEFT_MODE);
-    //     wait_ms(100);
-    // }
-    //
-    // //drivers::sht31 temp_humid_sensor(PB_9, PB_8);
-    // //printf("Temperature = %f \n", temp_humid_sensor.read_temperature());
-    // //printf("Humidity = %f \n", temp_humid_sensor.read_humidity());
-    //
-    // while(1);
-
 
   #ifdef RT_ARM_MBED
       //Logging is done over cout in RT_ARM_MBED
@@ -147,19 +72,15 @@ int main(int argc, char ** argv) {
 
   using logger_top=cadmium::logger::multilogger<log_messages, global_time>;
 
-
   /*******************************************/
-
   using AtomicModelPtr=std::shared_ptr<cadmium::dynamic::modeling::model>;
   using CoupledModelPtr=std::shared_ptr<cadmium::dynamic::modeling::coupled<TIME>>;
 
   /********************************************/
-  /******* Digital Temperature Sensor *********/
+  /******* Temperature Sensors *********/
   /********************************************/
-
   AtomicModelPtr digital_temp_humidity1 = cadmium::dynamic::translate::make_dynamic_atomic_model<DigitalTemperatureHumidity, TIME>("digital_temp_humidity1", PC_9, PA_8);
   AtomicModelPtr analog_temp1 = cadmium::dynamic::translate::make_dynamic_atomic_model<AnalogInput, TIME>("analog_temp1", PF_6, TIME("00:00:01:000"));
-
 
   /********************************************/
   /**************** LCD ***********************/
@@ -209,10 +130,13 @@ int main(int argc, char ** argv) {
   );
 
   ///****************////
-  //Logging not possible on DISCO: UART over SWD USB not supported
-  cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
-  r.run_until(TIME::infinity());
-  #ifndef RT_ARM_MBED
+  #ifdef RT_ARM_MBED
+    //Logging not possible on DISCO: UART over SWD USB not supported
+    cadmium::dynamic::engine::runner<NDTime, cadmium::logger::not_logger> r(TOP, {0});
+    r.run_until(TIME::infinity());
+  #else
+    cadmium::dynamic::engine::runner<NDTime, logger_top> r(TOP, {0});
+    r.run_until(TIME("00:10:00:000"));
     return 0;
   #endif
 }

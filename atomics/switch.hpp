@@ -62,9 +62,9 @@ public:
 
     // ports definition
     using input_ports=std::tuple<typename defs::temperature_in_1,
-                                 typename defs::humidity_in_1,
-                                 typename defs::temperature_in_2,
-                                 typename defs::ts_in>;
+    typename defs::humidity_in_1,
+    typename defs::temperature_in_2,
+    typename defs::ts_in>;
 
     using output_ports=std::tuple<typename defs::sensor_out>;
 
@@ -86,26 +86,30 @@ public:
 
         }
 
+        //Update Temperature from Digital Sensor 1
         for(const auto &x : get_messages<typename defs::temperature_in_1>(mbs)){
             state.sensor_update[0].temperature = x;
             state.propagating = true;
         }
 
+        //Update Humidity from Digital Sensor 1
         for(const auto &x : get_messages<typename defs::humidity_in_1>(mbs)){
             state.sensor_update[0].humidity = x;
             state.propagating = true;
         }
 
+        //Update Temperature from Analog Sensor 2
         for(const auto &x : get_messages<typename defs::temperature_in_2>(mbs)){
             const unsigned int beta = 4275;
 
+            //Input is a float between 0 and 1. Convert to a Temperature in Celsius
             float resistance = 10000.0 * ((1.0/x) - 1);
             state.sensor_update[1].temperature =(1/((log(resistance/10000.0)/beta) + (1.0/298.15)))-273.15;
 
             state.propagating = true;
         }
 
-
+        
 
     }
 
@@ -127,13 +131,13 @@ public:
     // time_advance function
     TIME time_advance() const {
         if(state.propagating)
-            return TIME::zero();
+        return TIME::zero();
         else
-            return TIME::infinity();
+        return TIME::infinity();
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename Switch<TIME>::state_type& i) {
-        os << "Sensor? " << (i.sensor_idx ? 1 : 0);
+        os << "Sensor Switch Number: " << i.sensor_idx;
         return os;
     }
 };

@@ -21,12 +21,6 @@
 #include <limits>
 #include <random>
 
-#ifdef RT_ARM_MBED
-    #include "../mbed.h"
-    #include "../drivers/sht31.hpp"
-    #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
-#endif
-
 using namespace cadmium;
 using namespace std;
 
@@ -36,7 +30,14 @@ struct digitalTemperatureHumidity_defs{
     struct humidity_out : public out_port<float> { };
 };
 
+/******************************************************************************
+* REAL-TIME IMPLEMENTATION
+*****************************************************************************/
 #ifdef RT_ARM_MBED
+
+#include "../mbed.h"
+#include "../drivers/sht31.hpp"
+#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
 template<typename TIME>
 class DigitalTemperatureHumidity {
@@ -46,15 +47,17 @@ public:
 
     TIME   pollingRate;
 
-    // default constructor
     DigitalTemperatureHumidity() noexcept {
         cadmium::embedded::embedded_error::hard_fault("Digital Temperature / Humdiity atomic model requires a pin definition");
 
     }
 
+    //Need to provide valid I2C pins to use this sensor
     DigitalTemperatureHumidity(PinName sda, PinName scl) {
         new (this) DigitalTemperatureHumidity(sda, scl, TIME("00:00:01:000"));
     }
+
+    //Constructor with Optional polling rate
     DigitalTemperatureHumidity(PinName sda, PinName scl, TIME rate) {
         pollingRate = rate;
         state.temp_humid_sensor = new drivers::sht31(sda,scl);
@@ -106,9 +109,8 @@ public:
     typename make_message_bags<output_ports>::type output() const {
         typename make_message_bags<output_ports>::type bags;
 
-            get_messages<typename defs::temperature_out>(bags).push_back(state.temperature);
-            get_messages<typename defs::humidity_out>(bags).push_back(state.humidity);
-
+        get_messages<typename defs::temperature_out>(bags).push_back(state.temperature);
+        get_messages<typename defs::humidity_out>(bags).push_back(state.humidity);
 
         return bags;
     }
@@ -124,6 +126,9 @@ public:
     }
 };
 
+/******************************************************************************
+* SIMULATOR IMPLEMENTATION
+*****************************************************************************/
 #else
 
 template<typename TIME>
@@ -135,6 +140,7 @@ private:
 
     std::default_random_engine generator;
 
+    //Random variables to stub sensor inputs
     normal temperature_distribution = normal(20.0,5.0);
     normal humidity_distribution = normal(50.0,5.0);
 
@@ -147,13 +153,16 @@ public:
         throw std::logic_error("Digital Temperature / Humdiity atomic model requires a pin definition");
     }
 
+    //Dummy I2C pins for simulator
     DigitalTemperatureHumidity(const char* sda, const char* scl) {
         new (this) DigitalTemperatureHumidity(sda, scl, TIME("00:00:01:000"));
     }
 
+    //Can provide different polling rate
     DigitalTemperatureHumidity(const char* sda, const char* scl, TIME rate) {
         pollingRate = rate;
 
+        //generate random values for temperature & humidity
         state.temperature = temperature_distribution(generator);
         state.humidity = humidity_distribution(generator);
     }

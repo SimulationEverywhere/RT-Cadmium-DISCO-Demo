@@ -21,6 +21,7 @@
 #include <limits>
 #include <random>
 
+//Describes touch position on screen
 struct cartesian_coordinates {
     int x;
     int y;
@@ -32,25 +33,27 @@ struct cartesian_coordinates {
 
 };
 
-
+/******************************************************************************
+* REAL-TIME IMPLEMENTATION
+*****************************************************************************/
 #ifdef RT_ARM_MBED
-  #include "../mbed.h"
-  #include "../drivers/TS_DISCO_F429ZI/TS_DISCO_F429ZI.h"
-  #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
-  #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
+#include "../mbed.h"
+#include "../drivers/TS_DISCO_F429ZI/TS_DISCO_F429ZI.h"
+#include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
+#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 
-  using namespace cadmium;
-  using namespace std;
+using namespace cadmium;
+using namespace std;
 
-  //Port definition
-  struct TS_defs{
+//Port definition
+struct TS_defs{
     struct out : public out_port<struct cartesian_coordinates> {};
-  };
+};
 
-  template<typename TIME>
-  class TouchScreen {
-  using defs=TS_defs; // putting definitions in context
-  public:
+template<typename TIME>
+class TouchScreen {
+    using defs=TS_defs; // putting definitions in context
+public:
 
     TIME   pollingRate;
     TS_DISCO_F429ZI ts;
@@ -67,6 +70,7 @@ struct cartesian_coordinates {
         state.coordinates.x = 0;
         state.coordinates.y = 0;
 
+        //Init screen, check if it worked
         if (ts.Init(ILI9341_LCD_PIXEL_WIDTH, ILI9341_LCD_PIXEL_HEIGHT) != TS_OK) {
             cadmium::embedded::embedded_error::hard_fault("Touch Screen Init FAIL!");
         }
@@ -102,13 +106,13 @@ struct cartesian_coordinates {
 
     // output function
     typename make_message_bags<output_ports>::type output() const {
-      typename make_message_bags<output_ports>::type bags;
+        typename make_message_bags<output_ports>::type bags;
 
-      if (TS_State.TouchDetected) {
-          get_messages<typename defs::out>(bags).push_back(state.coordinates);
-      }
+        if (TS_State.TouchDetected) {
+            get_messages<typename defs::out>(bags).push_back(state.coordinates);
+        }
 
-      return bags;
+        return bags;
     }
 
     // time_advance function
@@ -117,31 +121,35 @@ struct cartesian_coordinates {
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename TouchScreen<TIME>::state_type& i) {
-      os << "Touched @ Coordinates (X,Y): (" << to_string(i.coordinates.x) << ", " << to_string(i.coordinates.y) << ")";
-      return os;
+        os << "Touched @ Coordinates (X,Y): (" << to_string(i.coordinates.x) << ", " << to_string(i.coordinates.y) << ")";
+        return os;
     }
-  };
-  #else
+};
 
-    #include <cadmium/io/iestream.hpp>
-    using namespace cadmium;
-    using namespace std;
+/******************************************************************************
+* SIMULATOR IMPLEMENTATION
+*****************************************************************************/
+#else
+#include <cadmium/io/iestream.hpp>
+using namespace cadmium;
+using namespace std;
 
-    const char* TS_FILE = "./inputs/TS_in.txt";
+//Input file name
+const char* TS_FILE = "./inputs/TS_in.txt";
 
-    //Port definition
-    struct TS_defs{
-      struct out : public out_port<struct cartesian_coordinates> {};
-    };
+//Port definition
+struct TS_defs{
+    struct out : public out_port<struct cartesian_coordinates> {};
+};
 
-    template<typename TIME>
-    class TouchScreen : public iestream_input<struct cartesian_coordinates,TIME, TS_defs>{
-      public:
-        TouchScreen() : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
-        TouchScreen(TIME rate) : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
+template<typename TIME>
+class TouchScreen : public iestream_input<struct cartesian_coordinates,TIME, TS_defs>{
+public:
+    TouchScreen() : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
+    TouchScreen(TIME rate) : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
 
-    };
+};
 
-  #endif // RT_ARM_MBED
+#endif // RT_ARM_MBED
 
 #endif // DISCO_TS_HPP

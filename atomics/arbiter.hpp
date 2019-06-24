@@ -1,9 +1,6 @@
 /**
-* Ben Earle and Kyle Bjornson
+* Kyle Bjornson
 * ARSLab - Carleton University
-*
-* Blinky:
-* Simple modle to toggle the LED using DEVS internal transitions.
 */
 
 #ifndef DISCO_ARBITER_HPP
@@ -45,6 +42,7 @@ class Arbiter {
 
 private:
 
+    //Create update line for temperature value
     void update_temperature(float temperature) {
 
         lcd_update_line update_line;
@@ -60,6 +58,7 @@ private:
         state.output.lines.push_front(update_line);
     }
 
+    //Create update line for humidity value
     void update_humidity(float humidity) {
 
         lcd_update_line update_line;
@@ -75,6 +74,7 @@ private:
         state.output.lines.push_front(update_line);
     }
 
+    //Create update line for static text
     void populate_static_lines(void) {
 
         lcd_update_line update_line;
@@ -90,6 +90,11 @@ private:
         state.output.lines.push_front(update_line);
     }
 
+    /*
+    * Change LCD colour based on temperature value:
+    * (Cold) Blue->Green->Red (Hot)
+    * Grey indicates sensor failure
+    */
     void update_lcd_colour(float temperature) {
         if (isnan(temperature)) {
             state.output.lcd_colour = LCD_COLOR_GRAY;
@@ -106,6 +111,7 @@ private:
         }
     }
 
+    //Create update line for title of sensor (Given by switch model)
     void update_sensor_name(const char *sensor_name) {
 
         lcd_update_line update_line;
@@ -151,6 +157,7 @@ public:
             state.output.lines.clear();
             state.output.text_colour = LCD_COLOR_WHITE;
 
+            //Prepare values for LCD
             update_temperature(data.front().temperature);
             update_lcd_colour(data.front().temperature);
             update_humidity(data.front().humidity);
@@ -181,13 +188,13 @@ public:
     // time_advance function
     TIME time_advance() const {
         if(state.propagating)
-            return TIME::zero();
+        return TIME::zero();
         else
-            return TIME::infinity();
+        return TIME::infinity();
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename Arbiter<TIME>::state_type& i) {
-        os << "Propagating? " << (i.propagating ? 1 : 0);
+        os << i.output;
         return os;
     }
 };

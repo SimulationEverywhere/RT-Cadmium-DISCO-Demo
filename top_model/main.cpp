@@ -15,22 +15,22 @@
 #include <NDTime.hpp>
 #include <cadmium/io/iestream.hpp>
 
-#include <cadmium/real_time/arm_mbed/io/analogInput.hpp>
-#include <cadmium/real_time/arm_mbed/embedded_error.hpp>
-
 #include "../atomics/lcd.hpp"
 #include "../atomics/digital_temp_humidity.hpp"
 #include "../atomics/arbiter.hpp"
 #include "../atomics/touch_screen.hpp"
 #include "../atomics/switch.hpp"
 
+#include <cadmium/real_time/arm_mbed/io/analogInput.hpp>
 
 #ifdef RT_ARM_MBED
   #include "../mbed.h"
+  #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
 #else
   // When simulating the model it will use these files as IO in place of the pins specified.
-  const char* BUTTON1 = "./inputs/BUTTON1_In.txt";
-  const char* LCD1    = "./outputs/LCD_out.txt";
+  const char* PC_9;
+  const char* PA_8;
+  const char* PF_6;
 #endif
 
 using namespace std;
@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
     // all simulation timing and I/O streams are ommited when running embedded
     auto start = hclock::now(); //to measure simulation execution time
 
-    static std::ofstream out_data("disco_test_output.txt");
+    static std::ofstream out_data("disco_output.txt");
     struct oss_sink_provider{
       static std::ostream& sink(){
         return out_data;
@@ -136,7 +136,7 @@ int main(int argc, char ** argv) {
     r.run_until(TIME::infinity());
   #else
     cadmium::dynamic::engine::runner<NDTime, logger_top> r(TOP, {0});
-    r.run_until(TIME("00:10:00:000"));
+    r.run_until(TIME("00:01:00:000"));
     return 0;
   #endif
 }

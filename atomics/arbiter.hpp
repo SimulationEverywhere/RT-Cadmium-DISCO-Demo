@@ -24,6 +24,12 @@
 #include <limits>
 #include <random>
 
+struct sensor_data {
+    char sensor_name[17];
+    float temperature;
+    float humidity;
+};
+
 using namespace cadmium;
 using namespace std;
 
@@ -106,7 +112,7 @@ private:
 
         update_line.line_index = 10;
         update_line.alignment = CENTER_MODE;
-        sprintf(update_line.characters, sensor_name);
+        sprintf(update_line.characters, "%s", sensor_name);
 
         state.output.lines.push_front(update_line);
     }

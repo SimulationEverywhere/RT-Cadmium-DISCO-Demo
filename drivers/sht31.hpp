@@ -64,7 +64,7 @@ namespace drivers {
              * @brief Check status bytes
              */
             uint16_t read_status(void) {
-                char *val;
+                char *val = 0;
                 uint16_t stat;
 
                 write_command(SHT31_READSTATUS);

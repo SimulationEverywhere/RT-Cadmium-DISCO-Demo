@@ -21,6 +21,16 @@
 #include <limits>
 #include <random>
 
+struct cartesian_coordinates {
+    int x;
+    int y;
+
+    friend istream& operator>> (istream& is, cartesian_coordinates& coords) {
+        is>> coords.x >> coords.y;
+        return is;
+    }
+
+};
 
 
 #ifdef RT_ARM_MBED
@@ -28,11 +38,6 @@
   #include "../drivers/TS_DISCO_F429ZI/TS_DISCO_F429ZI.h"
   #include "../drivers/LCD_DISCO_F429ZI/LCD_DISCO_F429ZI.h"
   #include <cadmium/real_time/arm_mbed/embedded_error.hpp>
-
-  struct cartesian_coordinates {
-      int x;
-      int y;
-  };
 
   using namespace cadmium;
   using namespace std;
@@ -112,27 +117,31 @@
     }
 
     friend std::ostringstream& operator<<(std::ostringstream& os, const typename TouchScreen<TIME>::state_type& i) {
-      os << "Touched: " << "1";//i.output;
+      os << "Touched @ Coordinates (X,Y): (" << to_string(i.coordinates.x) << ", " << to_string(i.coordinates.y) << ")";
       return os;
     }
   };
-#else
-  #include <cadmium/io/oestream.hpp>
-  using namespace cadmium;
-  using namespace std;
+  #else
 
-  const char* LCD_FILE = "./outputs/LCD_out.txt"
+    #include <cadmium/io/iestream.hpp>
+    using namespace cadmium;
+    using namespace std;
 
-  //Port definition
-  struct TS_defs{
-    struct out : public out_port<struct cartesian_coordinates> {};
-  };
+    const char* TS_FILE = "./inputs/TS_in.txt";
 
+    //Port definition
+    struct TS_defs{
+      struct out : public out_port<struct cartesian_coordinates> {};
+    };
 
-  template<typename TIME>
-  class LCD : public oestream_output<std::string, TIME, LCD_defs>{
-    public:
-      LCD() : oestream_output<std::string, TIME, LCD_defs>(LCD_FILE) {}
-  };
-#endif //RT_ARM_MBED
+    template<typename TIME>
+    class TouchScreen : public iestream_input<struct cartesian_coordinates,TIME, TS_defs>{
+      public:
+        TouchScreen() : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
+        TouchScreen(TIME rate) : iestream_input<struct cartesian_coordinates,TIME, TS_defs>(TS_FILE) {}
+
+    };
+
+  #endif // RT_ARM_MBED
+
 #endif // DISCO_TS_HPP

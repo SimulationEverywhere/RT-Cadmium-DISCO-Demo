@@ -27,12 +27,6 @@
 using namespace cadmium;
 using namespace std;
 
-struct sensor_data {
-    char sensor_name[17];
-    float temperature;
-    float humidity;
-};
-
 //Port definition
 struct switch_defs {
     struct temperature_in_1 : public in_port<float> { };

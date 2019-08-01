@@ -13,18 +13,14 @@ flash:
 	st-flash write ../BUILD/$(COMPILE_TARGET)/GCC_ARM-CADMIUM/*.bin 0x8000000
 	$(info *** FLASH WILL TAKE ~15 Seconds! DO NOT RESET WHILE COM PORT LED IS FLASHING! ***)
 
-all: main.o ../data_structures/message.o
-	$(CC) -g -o $(EXECUTABLE_NAME) main.o ../data_structures/message.o
+all: main.o 
+	$(CC) -g -o $(EXECUTABLE_NAME) main.o 
 
 main.o: main.cpp
 	$(CC) -g -c $(CFLAGS) $(INCLUDECADMIUM) $(INCLUDEDESTIMES) main.cpp -o main.o
 
-../data_structures/message.o:
-	$(CC) -g -c $(CFLAGS) $(INCLUDECADMIUM) $(INCLUDEDESTIMES) ../data_structures/message.cpp -o ../data_structures/message.o
-
 clean:
 	rm -f $(EXECUTABLE_NAME) *.o *~
-	-for d in ../data_structures; do (cd $$d; rm -f *.o *~ ); done
 
 eclean:
 	rm -rf ../BUILD
